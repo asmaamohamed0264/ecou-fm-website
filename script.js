@@ -1,7 +1,8 @@
 // Stream URL configuration
-// Try HTTPS first, fallback to HTTP if needed
-const STREAM_URL = 'https://radio-fm-azuracast-5cca97-38-242-235-54.traefik.me/public/ecou_fm';
-const STREAM_URL_FALLBACK = 'http://radio-fm-azuracast-5cca97-38-242-235-54.traefik.me/public/ecou_fm';
+// AzuraCast public stream endpoint - try different formats
+const STREAM_BASE = 'http://radio-fm-azuracast-5cca97-38-242-235-54.traefik.me';
+const STREAM_URL = `${STREAM_BASE}/public/ecou_fm.mp3`; // MP3 stream
+const STREAM_URL_FALLBACK = `${STREAM_BASE}/public/ecou_fm`; // Fallback to default endpoint
 
 // DOM Elements
 const audioPlayer = document.getElementById('audioPlayer');
@@ -73,21 +74,37 @@ function togglePlayPause() {
 
 // Play audio
 function playAudio() {
+    console.log('Attempting to play audio from:', audioPlayer.src);
     isLoading = true;
     updateLoadingState();
+    
+    // Try to load the stream first
+    audioPlayer.load();
     
     const playPromise = audioPlayer.play();
     
     if (playPromise !== undefined) {
         playPromise
             .then(() => {
+                console.log('Audio playback started successfully');
                 isPlaying = true;
                 isLoading = false;
                 updatePlayState();
             })
             .catch(error => {
                 console.error('Error playing audio:', error);
-                handleError(error);
+                console.error('Trying fallback URL...');
+                // Try fallback URL
+                if (audioPlayer.src === STREAM_URL) {
+                    audioPlayer.src = STREAM_URL_FALLBACK;
+                    audioPlayer.load();
+                    audioPlayer.play().catch(err => {
+                        console.error('Fallback also failed:', err);
+                        handleError(err);
+                    });
+                } else {
+                    handleError(error);
+                }
             });
     }
 }
