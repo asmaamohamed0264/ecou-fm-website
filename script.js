@@ -93,8 +93,26 @@ function initAudioPlayer() {
     });
     
     // Button click handler
-    playPauseBtn.addEventListener('click', togglePlayPause);
+    playPauseBtn.addEventListener('click', (e) => {
+        console.log('🖱️ Button clicked!');
+        e.preventDefault();
+        e.stopPropagation();
+        togglePlayPause();
+    });
+    
+    // Also add mousedown for better responsiveness
+    playPauseBtn.addEventListener('mousedown', (e) => {
+        console.log('🖱️ Button mousedown!');
+    });
+    
+    // Ensure button is clickable
+    playPauseBtn.disabled = false;
+    playPauseBtn.style.cursor = 'pointer';
+    playPauseBtn.setAttribute('tabindex', '0');
+    
     console.log('✅ Play/Pause button event listener attached');
+    console.log('Button disabled state:', playPauseBtn.disabled);
+    console.log('Button style:', window.getComputedStyle(playPauseBtn).pointerEvents);
     
     // Volume slider handler
     volumeSlider.addEventListener('input', handleVolumeChange);
@@ -349,31 +367,50 @@ function handleKeyPress(e) {
 
 // Initialize when DOM is ready
 function initializeApp() {
-    console.log('Initializing Ecou FM player...');
+    console.log('🚀 Initializing Ecou FM player...');
     
     // Check if all required elements exist
     if (!audioPlayer) {
-        console.error('Audio player element not found!');
+        console.error('❌ Audio player element not found!');
         return;
     }
-    if (!playPauseBtn) {
-        console.error('Play/Pause button not found!');
-        return;
-    }
-    if (!volumeSlider) {
-        console.error('Volume slider not found!');
-        return;
-    }
+    console.log('✅ Audio player element found');
     
-    console.log('All elements found, initializing player...');
-    initAudioPlayer();
-    console.log('Player initialized successfully');
+    if (!playPauseBtn) {
+        console.error('❌ Play/Pause button not found!');
+        return;
+    }
+    console.log('✅ Play/Pause button found');
+    
+    if (!volumeSlider) {
+        console.error('❌ Volume slider not found!');
+        return;
+    }
+    console.log('✅ Volume slider found');
+    
+    // Make sure button is enabled
+    playPauseBtn.disabled = false;
+    playPauseBtn.style.pointerEvents = 'auto';
+    playPauseBtn.style.opacity = '1';
+    console.log('✅ Button enabled and ready');
+    
+    console.log('✅ All elements found, initializing player...');
+    try {
+        initAudioPlayer();
+        console.log('✅ Player initialized successfully');
+    } catch (error) {
+        console.error('❌ Error initializing player:', error);
+    }
 }
 
+// Wait for DOM to be fully ready
 if (document.readyState === 'loading') {
+    console.log('⏳ DOM is loading, waiting for DOMContentLoaded...');
     document.addEventListener('DOMContentLoaded', initializeApp);
 } else {
-    initializeApp();
+    console.log('✅ DOM already ready, initializing now...');
+    // Use setTimeout to ensure all scripts are loaded
+    setTimeout(initializeApp, 100);
 }
 
 // Handle page visibility change (pause when tab is hidden to save resources)

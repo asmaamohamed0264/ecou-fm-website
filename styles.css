@@ -155,7 +155,7 @@ body::before {
     border-radius: 50%;
     background: linear-gradient(135deg, var(--primary-gradient-start), var(--primary-gradient-end));
     border: none;
-    cursor: pointer;
+    cursor: pointer !important;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -164,6 +164,15 @@ body::before {
     box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
     position: relative;
     overflow: hidden;
+    pointer-events: auto !important;
+    opacity: 1 !important;
+    z-index: 10;
+}
+
+.play-pause-btn:disabled {
+    opacity: 1 !important;
+    cursor: pointer !important;
+    pointer-events: auto !important;
 }
 
 .play-pause-btn::before {
