@@ -1,8 +1,18 @@
 // Stream URL configuration
 // AzuraCast public stream endpoint - try different formats
 const STREAM_BASE = 'http://radio-fm-azuracast-5cca97-38-242-235-54.traefik.me';
-const STREAM_URL = `${STREAM_BASE}/public/ecou_fm.mp3`; // MP3 stream
-const STREAM_URL_FALLBACK = `${STREAM_BASE}/public/ecou_fm`; // Fallback to default endpoint
+// AzuraCast public streams can be accessed via:
+// 1. /public/station_name (auto-detects format)
+// 2. /public/station_name.mp3 (MP3 stream)
+// 3. /radio/station_name (direct radio endpoint)
+const STREAM_URLS = [
+    `${STREAM_BASE}/public/ecou_fm`, // Default public endpoint
+    `${STREAM_BASE}/public/ecou_fm.mp3`, // MP3 format
+    `${STREAM_BASE}/radio/ecou_fm`, // Direct radio endpoint
+    `${STREAM_BASE}/public/ecou_fm/stream` // Stream endpoint
+];
+let currentStreamIndex = 0;
+const STREAM_URL = STREAM_URLS[0];
 
 // DOM Elements
 const audioPlayer = document.getElementById('audioPlayer');
@@ -93,18 +103,7 @@ function playAudio() {
             })
             .catch(error => {
                 console.error('Error playing audio:', error);
-                console.error('Trying fallback URL...');
-                // Try fallback URL
-                if (audioPlayer.src === STREAM_URL) {
-                    audioPlayer.src = STREAM_URL_FALLBACK;
-                    audioPlayer.load();
-                    audioPlayer.play().catch(err => {
-                        console.error('Fallback also failed:', err);
-                        handleError(err);
-                    });
-                } else {
-                    handleError(error);
-                }
+                handleError(error);
             });
     }
 }
@@ -142,17 +141,32 @@ function handleError(error) {
         code: audioPlayer.error?.code,
         message: audioPlayer.error?.message,
         networkState: audioPlayer.networkState,
-        readyState: audioPlayer.readyState
+        readyState: audioPlayer.readyState,
+        currentSrc: audioPlayer.src
     });
     
-    // Try fallback URL if using HTTPS and it failed
-    if (audioPlayer.src === STREAM_URL && STREAM_URL.startsWith('https')) {
-        console.log('HTTPS failed, trying HTTP fallback...');
-        audioPlayer.src = STREAM_URL_FALLBACK;
+    // Try next stream URL if available
+    currentStreamIndex++;
+    if (currentStreamIndex < STREAM_URLS.length) {
+        console.log(`Trying stream URL ${currentStreamIndex + 1}/${STREAM_URLS.length}:`, STREAM_URLS[currentStreamIndex]);
+        audioPlayer.src = STREAM_URLS[currentStreamIndex];
         audioPlayer.load();
+        // Try to play again after a short delay
+        setTimeout(() => {
+            audioPlayer.play().catch(err => {
+                console.error('Failed to play with new URL:', err);
+                if (currentStreamIndex >= STREAM_URLS.length - 1) {
+                    showError();
+                }
+            });
+        }, 500);
         return;
     }
     
+    showError();
+}
+
+function showError() {
     isPlaying = false;
     isLoading = false;
     hasError = true;
@@ -165,7 +179,7 @@ function handleError(error) {
     if (!document.querySelector('.error-message')) {
         const errorMsg = document.createElement('div');
         errorMsg.className = 'error-message';
-        errorMsg.textContent = 'Nu s-a putut conecta la stream. Te rugăm să încerci din nou.';
+        errorMsg.textContent = 'Nu s-a putut conecta la stream. Verifică că stream-ul este activ în AzuraCast.';
         if (playerCard) playerCard.appendChild(errorMsg);
     }
     
