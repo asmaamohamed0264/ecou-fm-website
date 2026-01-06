@@ -1,5 +1,7 @@
 // Stream URL configuration
-const STREAM_URL = 'http://radio-fm-azuracast-5cca97-38-242-235-54.traefik.me/public/ecou_fm';
+// Try HTTPS first, fallback to HTTP if needed
+const STREAM_URL = 'https://radio-fm-azuracast-5cca97-38-242-235-54.traefik.me/public/ecou_fm';
+const STREAM_URL_FALLBACK = 'http://radio-fm-azuracast-5cca97-38-242-235-54.traefik.me/public/ecou_fm';
 
 // DOM Elements
 const audioPlayer = document.getElementById('audioPlayer');
@@ -119,25 +121,40 @@ function handleEnded() {
 // Handle error
 function handleError(error) {
     console.error('Audio error:', error);
+    console.error('Error details:', {
+        code: audioPlayer.error?.code,
+        message: audioPlayer.error?.message,
+        networkState: audioPlayer.networkState,
+        readyState: audioPlayer.readyState
+    });
+    
+    // Try fallback URL if using HTTPS and it failed
+    if (audioPlayer.src === STREAM_URL && STREAM_URL.startsWith('https')) {
+        console.log('HTTPS failed, trying HTTP fallback...');
+        audioPlayer.src = STREAM_URL_FALLBACK;
+        audioPlayer.load();
+        return;
+    }
+    
     isPlaying = false;
     isLoading = false;
     hasError = true;
     
-    playerCard.classList.add('error');
-    statusIndicator.classList.remove('playing');
-    statusText.textContent = 'Eroare de conexiune';
+    if (playerCard) playerCard.classList.add('error');
+    if (statusIndicator) statusIndicator.classList.remove('playing');
+    if (statusText) statusText.textContent = 'Eroare de conexiune';
     
     // Show error message if not already present
     if (!document.querySelector('.error-message')) {
         const errorMsg = document.createElement('div');
         errorMsg.className = 'error-message';
         errorMsg.textContent = 'Nu s-a putut conecta la stream. Te rugăm să încerci din nou.';
-        playerCard.appendChild(errorMsg);
+        if (playerCard) playerCard.appendChild(errorMsg);
     }
     
     // Update button state
-    const playIcon = playPauseBtn.querySelector('.play-icon');
-    const pauseIcon = playPauseBtn.querySelector('.pause-icon');
+    const playIcon = playPauseBtn?.querySelector('.play-icon');
+    const pauseIcon = playPauseBtn?.querySelector('.pause-icon');
     if (playIcon) playIcon.style.display = 'block';
     if (pauseIcon) pauseIcon.style.display = 'none';
 }
