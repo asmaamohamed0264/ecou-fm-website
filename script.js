@@ -19,24 +19,82 @@ let hasError = false;
 // Initialize audio player
 function initAudioPlayer() {
     console.log('Setting up audio player with stream:', STREAM_URL);
+    console.log('Current page protocol:', window.location.protocol);
+    console.log('Stream URL protocol:', new URL(STREAM_URL).protocol);
+    
+    // Check for mixed content issue (HTTPS page trying to load HTTP stream)
+    if (window.location.protocol === 'https:' && STREAM_URL.startsWith('http:')) {
+        console.warn('⚠️ Mixed Content Warning: HTTPS page trying to load HTTP stream');
+        console.warn('This may be blocked by browser security policies');
+    }
     
     audioPlayer.src = STREAM_URL;
     audioPlayer.volume = volumeSlider.value / 100;
     audioPlayer.crossOrigin = 'anonymous'; // Allow CORS
+    audioPlayer.preload = 'none'; // Don't preload, wait for user interaction
     
-    // Set up event listeners
-    audioPlayer.addEventListener('play', handlePlay);
-    audioPlayer.addEventListener('pause', handlePause);
-    audioPlayer.addEventListener('ended', handleEnded);
-    audioPlayer.addEventListener('error', handleError);
-    audioPlayer.addEventListener('loadstart', handleLoadStart);
-    audioPlayer.addEventListener('canplay', handleCanPlay);
-    audioPlayer.addEventListener('waiting', handleWaiting);
-    audioPlayer.addEventListener('playing', handlePlaying);
+    // Set up event listeners with detailed logging
+    audioPlayer.addEventListener('loadstart', () => {
+        console.log('📡 loadstart: Stream loading started');
+        handleLoadStart();
+    });
+    
+    audioPlayer.addEventListener('progress', () => {
+        console.log('📊 progress: Buffering...', audioPlayer.buffered.length > 0 ? audioPlayer.buffered.end(0) : 0);
+    });
+    
+    audioPlayer.addEventListener('canplay', () => {
+        console.log('✅ canplay: Stream ready to play');
+        handleCanPlay();
+    });
+    
+    audioPlayer.addEventListener('canplaythrough', () => {
+        console.log('✅ canplaythrough: Stream can play through without buffering');
+    });
+    
+    audioPlayer.addEventListener('waiting', () => {
+        console.log('⏳ waiting: Waiting for data...');
+        handleWaiting();
+    });
+    
+    audioPlayer.addEventListener('playing', () => {
+        console.log('▶️ playing: Stream is now playing');
+        handlePlaying();
+    });
+    
+    audioPlayer.addEventListener('play', () => {
+        console.log('▶️ play event fired');
+        handlePlay();
+    });
+    
+    audioPlayer.addEventListener('pause', () => {
+        console.log('⏸️ pause event fired');
+        handlePause();
+    });
+    
+    audioPlayer.addEventListener('ended', () => {
+        console.log('⏹️ ended: Stream ended');
+        handleEnded();
+    });
+    
+    audioPlayer.addEventListener('error', (e) => {
+        console.error('❌ error event fired:', e);
+        console.error('Audio error code:', audioPlayer.error?.code);
+        console.error('Audio error message:', audioPlayer.error?.message);
+        handleError(e);
+    });
+    
+    audioPlayer.addEventListener('stalled', () => {
+        console.warn('⚠️ stalled: Stream stalled');
+    });
+    
+    audioPlayer.addEventListener('suspend', () => {
+        console.warn('⚠️ suspend: Stream suspended');
+    });
     
     // Button click handler
     playPauseBtn.addEventListener('click', togglePlayPause);
-    console.log('Play/Pause button event listener attached');
+    console.log('✅ Play/Pause button event listener attached');
     
     // Volume slider handler
     volumeSlider.addEventListener('input', handleVolumeChange);
@@ -47,7 +105,9 @@ function initAudioPlayer() {
     // Update volume display
     updateVolumeDisplay();
     
-    console.log('Audio player setup complete');
+    console.log('✅ Audio player setup complete');
+    console.log('Audio element:', audioPlayer);
+    console.log('Audio src:', audioPlayer.src);
 }
 
 // Toggle play/pause
@@ -76,28 +136,49 @@ function togglePlayPause() {
 
 // Play audio
 function playAudio() {
-    console.log('Attempting to play audio from:', audioPlayer.src);
+    console.log('🎵 Attempting to play audio...');
+    console.log('Current src:', audioPlayer.src);
+    console.log('Network state:', audioPlayer.networkState);
+    console.log('Ready state:', audioPlayer.readyState);
+    console.log('Current time:', audioPlayer.currentTime);
+    console.log('Duration:', audioPlayer.duration);
+    
     isLoading = true;
     updateLoadingState();
     
+    // Set src again to ensure it's correct
+    if (audioPlayer.src !== STREAM_URL) {
+        console.log('Updating src to:', STREAM_URL);
+        audioPlayer.src = STREAM_URL;
+    }
+    
     // Try to load the stream first
+    console.log('Loading stream...');
     audioPlayer.load();
     
-    const playPromise = audioPlayer.play();
-    
-    if (playPromise !== undefined) {
-        playPromise
-            .then(() => {
-                console.log('Audio playback started successfully');
-                isPlaying = true;
-                isLoading = false;
-                updatePlayState();
-            })
-            .catch(error => {
-                console.error('Error playing audio:', error);
-                handleError(error);
-            });
-    }
+    // Wait a bit for loadstart event
+    setTimeout(() => {
+        console.log('Attempting play()...');
+        const playPromise = audioPlayer.play();
+        
+        if (playPromise !== undefined) {
+            playPromise
+                .then(() => {
+                    console.log('✅ Audio playback started successfully');
+                    isPlaying = true;
+                    isLoading = false;
+                    updatePlayState();
+                })
+                .catch(error => {
+                    console.error('❌ Error playing audio:', error);
+                    console.error('Error name:', error.name);
+                    console.error('Error message:', error.message);
+                    handleError(error);
+                });
+        } else {
+            console.warn('⚠️ play() returned undefined');
+        }
+    }, 100);
 }
 
 // Pause audio
