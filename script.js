@@ -1,18 +1,6 @@
 // Stream URL configuration
-// AzuraCast public stream endpoint - try different formats
-const STREAM_BASE = 'http://radio-fm-azuracast-5cca97-38-242-235-54.traefik.me';
-// AzuraCast public streams can be accessed via:
-// 1. /public/station_name (auto-detects format)
-// 2. /public/station_name.mp3 (MP3 stream)
-// 3. /radio/station_name (direct radio endpoint)
-const STREAM_URLS = [
-    `${STREAM_BASE}/public/ecou_fm`, // Default public endpoint
-    `${STREAM_BASE}/public/ecou_fm.mp3`, // MP3 format
-    `${STREAM_BASE}/radio/ecou_fm`, // Direct radio endpoint
-    `${STREAM_BASE}/public/ecou_fm/stream` // Stream endpoint
-];
-let currentStreamIndex = 0;
-const STREAM_URL = STREAM_URLS[0];
+// AzuraCast direct MP3 stream URL (found in AzuraCast player audio tag)
+const STREAM_URL = 'http://radio-fm-azuracast-5cca97-38-242-235-54.traefik.me:8000/radio.mp3';
 
 // DOM Elements
 const audioPlayer = document.getElementById('audioPlayer');
@@ -70,7 +58,11 @@ function togglePlayPause() {
         // Retry on error
         console.log('Retrying after error...');
         hasError = false;
-        if (playerCard) playerCard.classList.remove('error');
+        if (playerCard) {
+            playerCard.classList.remove('error');
+            const errorMsg = document.querySelector('.error-message');
+            if (errorMsg) errorMsg.remove();
+        }
         audioPlayer.src = STREAM_URL;
         audioPlayer.load();
     }
@@ -144,24 +136,6 @@ function handleError(error) {
         readyState: audioPlayer.readyState,
         currentSrc: audioPlayer.src
     });
-    
-    // Try next stream URL if available
-    currentStreamIndex++;
-    if (currentStreamIndex < STREAM_URLS.length) {
-        console.log(`Trying stream URL ${currentStreamIndex + 1}/${STREAM_URLS.length}:`, STREAM_URLS[currentStreamIndex]);
-        audioPlayer.src = STREAM_URLS[currentStreamIndex];
-        audioPlayer.load();
-        // Try to play again after a short delay
-        setTimeout(() => {
-            audioPlayer.play().catch(err => {
-                console.error('Failed to play with new URL:', err);
-                if (currentStreamIndex >= STREAM_URLS.length - 1) {
-                    showError();
-                }
-            });
-        }, 500);
-        return;
-    }
     
     showError();
 }
