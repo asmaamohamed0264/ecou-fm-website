@@ -64,7 +64,22 @@
     </div>
 
     <audio id="audioPlayer" preload="none"></audio>
-    <script src="script.js"></script>
+    <script>
+        // Immediate logging to verify script execution
+        console.log('📄 HTML loaded, about to load script.js...');
+        
+        // Create script element dynamically to catch errors
+        const script = document.createElement('script');
+        script.src = 'script.js';
+        script.onload = function() {
+            console.log('✅ script.js loaded successfully');
+        };
+        script.onerror = function() {
+            console.error('❌ Failed to load script.js! Check if file exists and is accessible.');
+            console.error('Trying to load script.js from:', window.location.href.replace('index.html', 'script.js'));
+        };
+        document.body.appendChild(script);
+    </script>
 </body>
 </html>
 

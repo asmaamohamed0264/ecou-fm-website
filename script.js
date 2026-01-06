@@ -1,6 +1,8 @@
 // Stream URL configuration
 // AzuraCast direct MP3 stream URL (found in AzuraCast player audio tag)
+console.log('📜 script.js is executing...');
 const STREAM_URL = 'http://radio-fm-azuracast-5cca97-38-242-235-54.traefik.me:8000/radio.mp3';
+console.log('✅ STREAM_URL defined:', STREAM_URL);
 
 // DOM Elements
 const audioPlayer = document.getElementById('audioPlayer');
