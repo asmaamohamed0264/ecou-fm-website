@@ -17,8 +17,11 @@ let hasError = false;
 
 // Initialize audio player
 function initAudioPlayer() {
+    console.log('Setting up audio player with stream:', STREAM_URL);
+    
     audioPlayer.src = STREAM_URL;
     audioPlayer.volume = volumeSlider.value / 100;
+    audioPlayer.crossOrigin = 'anonymous'; // Allow CORS
     
     // Set up event listeners
     audioPlayer.addEventListener('play', handlePlay);
@@ -32,6 +35,7 @@ function initAudioPlayer() {
     
     // Button click handler
     playPauseBtn.addEventListener('click', togglePlayPause);
+    console.log('Play/Pause button event listener attached');
     
     // Volume slider handler
     volumeSlider.addEventListener('input', handleVolumeChange);
@@ -41,14 +45,19 @@ function initAudioPlayer() {
     
     // Update volume display
     updateVolumeDisplay();
+    
+    console.log('Audio player setup complete');
 }
 
 // Toggle play/pause
 function togglePlayPause() {
+    console.log('Play/Pause button clicked');
+    
     if (hasError) {
         // Retry on error
+        console.log('Retrying after error...');
         hasError = false;
-        playerCard.classList.remove('error');
+        if (playerCard) playerCard.classList.remove('error');
         audioPlayer.src = STREAM_URL;
         audioPlayer.load();
     }
@@ -236,10 +245,32 @@ function handleKeyPress(e) {
 }
 
 // Initialize when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initAudioPlayer);
-} else {
+function initializeApp() {
+    console.log('Initializing Ecou FM player...');
+    
+    // Check if all required elements exist
+    if (!audioPlayer) {
+        console.error('Audio player element not found!');
+        return;
+    }
+    if (!playPauseBtn) {
+        console.error('Play/Pause button not found!');
+        return;
+    }
+    if (!volumeSlider) {
+        console.error('Volume slider not found!');
+        return;
+    }
+    
+    console.log('All elements found, initializing player...');
     initAudioPlayer();
+    console.log('Player initialized successfully');
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeApp);
+} else {
+    initializeApp();
 }
 
 // Handle page visibility change (pause when tab is hidden to save resources)
